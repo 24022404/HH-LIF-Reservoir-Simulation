@@ -1,0 +1,44 @@
+1, Cách neuron model hoạt động:
+INPUT → TÍCH LŨY → SO SÁNH NGƯỠNG → BẮN/KHÔNG BẮN
+Chi tiết:
+Nhận input (từ nhiều neuron khác)
+    Ví dụ: nhận tín hiệu 0.3, 0.5, 0.2
+    Cộng dồn (tích lũy điện thế)
+    Tổng = 0.3 + 0.5 + 0.2 = 1.0
+    So sánh với ngưỡng (threshold)
+    Nếu tổng ≥ ngưỡng (giả sử ngưỡng = 0.8) → BẮN
+    Nếu tổng < ngưỡng → KHÔNG BẮN
+Output
+    BẮN → gửi tín hiệu "1" (spike) cho neuron tiếp theo
+    KHÔNG BẮN → gửi "0" hoặc không gửi gì
+
+2, Spiking Neural Networks (SNNs)
+    ## Cách hoạt động:
+    **INPUT (theo thời gian)** → **TÍCH LŨY DẦN** → **SO SÁNH NGƯỠNG** → **BẮN** → **RESET** → **LẶP LẠI**
+    ## Chi tiết:
+    ### 1. Nhận input THEO THỜI GIAN
+    - t=1ms: nhận spike từ neuron A
+    - t=3ms: nhận spike từ neuron B  
+    - t=5ms: nhận spike từ neuron C
+    - *(Không phải nhận cùng lúc như neuron thường!)*
+    ### 2. Tích lũy điện thế (từ từ, qua thời gian)
+    - t=0ms: điện thế = 0
+    - t=1ms: +0.3 → điện thế = 0.3
+    - t=2ms: điện thế "rò rỉ" → 0.25 *(tự giảm dần!)*
+    - t=3ms: +0.5 → điện thế = 0.75
+    - t=5ms: +0.2 → điện thế = 0.85
+    ### 3. So sánh ngưỡng
+    - Ngưỡng = 0.8
+    - Khi điện thế = 0.85 ≥ 0.8 → **BẮN!**
+    ### 4. Bắn spike
+    - Gửi 1 xung điện tại **đúng thời điểm t=5ms**
+    - *(Không phải gửi số 0.85, mà gửi "có spike tại t=5ms"!)*
+    ### 5. Reset về 0
+    - Sau khi bắn → điện thế về 0
+    - Bắt đầu tích lũy lại từ đầu
+    ## Khác biệt chính:
+    **Neuron thường:**  
+    Nhận [0.3, 0.5, 0.2] → Tổng = 1.0 → Bắn số "1.0"
+    **Spiking neuron:**  
+    Nhận spike t=1ms, t=3ms, t=5ms → Tích lũy dần qua thời gian → Bắn spike tại t=5ms → Reset
+    **Điểm mới: Có YẾU TỐ THỜI GIAN + ĐIỆN THẾ TỰ RÒ RỈ!**
