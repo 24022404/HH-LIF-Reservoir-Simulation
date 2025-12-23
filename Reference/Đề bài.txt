@@ -1,0 +1,4 @@
+Quiz (20%) = Gửi code và báo cáo việc thực hiện mô phỏng 3 mô hình 
+(Hodgkin-Huxley, Leaky Integrate-and-Fire, Reservoir NN), theo 
+hướng dẫn Assignment (đã giao 3/11) về Exploring Neuron Models and 
+Neural Networks. Deadline: 30/12.
