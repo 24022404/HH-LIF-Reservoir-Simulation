@@ -1,0 +1,425 @@
+\documentclass[12pt,a4paper]{article}
+
+% Packages
+\usepackage[utf8]{inputenc}
+\usepackage[T5]{fontenc}
+\usepackage[vietnamese]{babel}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{subcaption}
+
+% Code listing settings
+\lstset{
+    basicstyle=\ttfamily\footnotesize,
+    keywordstyle=\color{blue},
+    commentstyle=\color{gray},
+    numbers=left,
+    numberstyle=\tiny\color{gray},
+    frame=single,
+    breaklines=true,
+    xleftmargin=1.5em
+}
+
+\begin{document}
+
+% Title page
+\begin{titlepage}
+    \centering
+    
+    % Frame border - even larger size
+    \begin{minipage}[c][0.97\textheight]{0.96\textwidth}
+        \centering
+        \fbox{\begin{minipage}[c][0.95\textheight]{0.98\textwidth}
+            \centering
+            \vspace{1.5cm}
+            
+            % University name
+            {\large\bfseries ĐẠI HỌC QUỐC GIA HÀ NỘI\\
+            TRƯỜNG ĐẠI HỌC CÔNG NGHỆ\\[1.5cm]}
+            
+            % Logo - Place UET_logo.png in the same folder
+            \includegraphics[width=4.5cm]{UET_logo.png}\\[1.5cm]
+            
+            % Report title
+            {\Large\bfseries BÁO CÁO CÁ NHÂN\\[0.5cm]}
+            {\large\bfseries KHÁM PHÁ CÁC MÔ HÌNH NEURON VÀ\\[0.2cm]
+            MẠNG NEURAL\\[2.5cm]}
+            
+            % Team/Student info
+            {\large\textbf{Sinh viên thực hiện:}\\[0.8cm]}
+            \begin{flushleft}
+            \hspace{3.5cm}1. \hspace{0.5cm} [Họ và tên] - [MSSV]\\[0.5cm]
+            \end{flushleft}
+            
+            \vfill
+            
+            % Date
+            {\large Hà Nội -- 2025}
+            
+            \vspace{1.5cm}
+        \end{minipage}}
+    \end{minipage}
+    
+\end{titlepage}
+
+\tableofcontents
+\newpage
+
+% ============================================================
+\section{Giới thiệu}
+
+Báo cáo này trình bày kết quả mô phỏng ba mô hình tính toán thần kinh quan trọng:
+
+\begin{enumerate}
+    \item \textbf{Hodgkin-Huxley Model}: Mô phỏng điện thế hoạt động (action potential) với phân tích vai trò của dòng ion Na$^+$ và K$^+$
+    \item \textbf{Leaky Integrate-and-Fire Model}: Mô phỏng neuron nhận dòng điện dạng sóng vuông
+    \item \textbf{Reservoir Neural Network}: Dự đoán chuỗi thời gian Mackey-Glass ở khoảng cách gần ($t+10$) và xa ($t+100$)
+\end{enumerate}
+
+Các mô phỏng được thực hiện bằng Python với thư viện NumPy, SciPy, và matplotlib.
+
+% ============================================================
+\section{Task 1: Hodgkin-Huxley Model}
+
+\subsection{Yêu cầu}
+\begin{itemize}
+    \item Định nghĩa tham số và 6 hàm tốc độ ($\alpha_x$, $\beta_x$)
+    \item Điện thế ban đầu $V_0 = -65$ mV
+    \item Dòng kích thích $I_{\text{ext}} = 20$ $\mu$A/cm$^2$ (step input)
+    \item Vẽ đồ thị: $V$, $I_{\text{Na}}$, $I_{\text{K}}$
+    \item Giải thích vai trò của $I_{\text{Na}}$ và $I_{\text{K}}$
+\end{itemize}
+
+\subsection{Tham số mô hình}
+
+\begin{table}[H]
+\centering
+\caption{Tham số Hodgkin-Huxley}
+\begin{tabular}{lcc|lcc}
+\toprule
+\textbf{Tham số} & \textbf{Giá trị} & \textbf{Đơn vị} & \textbf{Tham số} & \textbf{Giá trị} & \textbf{Đơn vị} \\
+\midrule
+$C_m$ & 1.0 & $\mu$F/cm$^2$ & $E_{\text{Na}}$ & 50.0 & mV \\
+$g_{\text{Na}}$ & 120.0 & mS/cm$^2$ & $E_{\text{K}}$ & -77.0 & mV \\
+$g_{\text{K}}$ & 36.0 & mS/cm$^2$ & $E_{\text{L}}$ & -54.387 & mV \\
+$g_{\text{L}}$ & 0.3 & mS/cm$^2$ & $V_0$ & -65.0 & mV \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Phương trình mô hình}
+
+Hệ phương trình Hodgkin-Huxley:
+
+\begin{align}
+C_m \frac{dV}{dt} &= I_{\text{ext}} - I_{\text{Na}} - I_{\text{K}} - I_{\text{L}} \\
+I_{\text{Na}} &= g_{\text{Na}} m^3 h (V - E_{\text{Na}}) \\
+I_{\text{K}} &= g_{\text{K}} n^4 (V - E_{\text{K}}) \\
+I_{\text{L}} &= g_{\text{L}} (V - E_{\text{L}})
+\end{align}
+
+\textbf{6 hàm tốc độ:}
+
+\begin{align}
+\alpha_m(V) &= \frac{0.1(V+40)}{1-e^{-(V+40)/10}}, \quad 
+\beta_m(V) = 4e^{-(V+65)/18} \\
+\alpha_h(V) &= 0.07e^{-(V+65)/20}, \quad 
+\beta_h(V) = \frac{1}{1+e^{-(V+35)/10}} \\
+\alpha_n(V) &= \frac{0.01(V+55)}{1-e^{-(V+55)/10}}, \quad 
+\beta_n(V) = 0.125e^{-(V+65)/80}
+\end{align}
+
+Biến trạng thái cổng ion:
+\begin{equation}
+\frac{dx}{dt} = \alpha_x(V)(1-x) - \beta_x(V)x, \quad x \in \{m, h, n\}
+\end{equation}
+
+\subsection{Kết quả mô phỏng}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{hh_static_plots.png}
+\caption{Mô phỏng Hodgkin-Huxley: (a) Điện thế màng, (b) Dòng Sodium, (c) Dòng Potassium. Neuron phát xung lặp lại với tần số ~10 Hz khi nhận dòng kích thích 20 $\mu$A/cm$^2$.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{/mnt/project/hh_action_potential.gif}
+\caption{Animation quá trình hình thành action potential theo thời gian thực.}
+\end{figure}
+
+\subsection{Phân tích vai trò của $I_{\text{Na}}$ và $I_{\text{K}}$}
+
+\subsubsection{Depolarization (Khử cực) - vai trò của $I_{\text{Na}}$}
+
+\textbf{Thời gian:} $t \approx 5-8$ ms
+
+\textbf{Cơ chế:}
+\begin{itemize}
+    \item Khi dòng kích thích được áp vào, $V$ tăng nhẹ
+    \item Khi $V$ vượt ngưỡng $\approx -55$ mV, kênh Na$^+$ mở nhanh (biến $m$ tăng)
+    \item Na$^+$ lao vào tế bào $\Rightarrow$ $I_{\text{Na}}$ âm (dòng vào)
+    \item \textbf{Phản hồi dương:} $V \uparrow \Rightarrow$ kênh Na mở $\Rightarrow I_{\text{Na}} \downarrow \Rightarrow V \uparrow$
+    \item Điện thế tăng nhanh: $-65$ mV $\rightarrow$ $+41$ mV trong $\sim$2 ms
+\end{itemize}
+
+\textbf{Kết quả quan sát:}
+\begin{itemize}
+    \item $V_{\text{peak}} = 41.29$ mV tại $t = 6.51$ ms
+    \item $I_{\text{Na,min}} = -797.44$ $\mu$A/cm$^2$ (cực đại âm)
+\end{itemize}
+
+\subsubsection{Repolarization (Tái phân cực) - vai trò của $I_{\text{K}}$}
+
+\textbf{Thời gian:} $t \approx 8-15$ ms
+
+\textbf{Cơ chế:}
+\begin{itemize}
+    \item Kênh K$^+$ mở chậm hơn kênh Na (biến $n$ tăng dần)
+    \item Kênh Na bắt đầu đóng (inactivation qua biến $h$)
+    \item K$^+$ chảy ra ngoài $\Rightarrow$ $I_{\text{K}}$ dương (dòng ra)
+    \item Điện thế giảm về giá trị nghỉ
+    \item Kênh K đóng chậm $\Rightarrow$ hyperpolarization tạm thời
+\end{itemize}
+
+\textbf{Kết quả quan sát:}
+\begin{itemize}
+    \item $I_{\text{K,max}} = 850.28$ $\mu$A/cm$^2$ tại $t = 7.40$ ms
+    \item Điện thế trở về $-65$ mV sau $\sim$10 ms
+\end{itemize}
+
+\subsubsection{Kết luận}
+
+\begin{itemize}
+    \item \textbf{$I_{\text{Na}}$}: Nguyên nhân chính của \textbf{depolarization}
+    \begin{itemize}
+        \item Mở nhanh, đóng nhanh
+        \item Tạo pha tăng nhanh của action potential
+        \item Cơ chế phản hồi dương khuếch đại tín hiệu
+    \end{itemize}
+    
+    \item \textbf{$I_{\text{K}}$}: Nguyên nhân chính của \textbf{repolarization}
+    \begin{itemize}
+        \item Mở chậm, đóng chậm
+        \item Đưa điện thế về trạng thái nghỉ
+        \item Tạo giai đoạn refractory, ngăn phát xung liên tục
+    \end{itemize}
+\end{itemize}
+
+% ============================================================
+\section{Task 2: Leaky Integrate-and-Fire Model}
+
+\subsection{Yêu cầu}
+
+Mô phỏng điện thế màng của neuron khi nhận dòng điện đầu vào dạng sóng vuông (square wave).
+
+\subsection{Phương trình mô hình}
+
+\begin{equation}
+\tau_m \frac{dV}{dt} = -(V - E_L) + R_m I_{\text{ext}}
+\end{equation}
+
+trong đó $\tau_m = C_m / g_L$ là hằng số thời gian màng.
+
+\textbf{Cơ chế phát xung:}
+\begin{itemize}
+    \item Nếu $V \geq V_{\text{threshold}}$: phát xung (spike)
+    \item Sau đó: $V \leftarrow V_{\text{reset}}$
+    \item Neuron vào giai đoạn trơ (refractory period) trong thời gian $t_{\text{ref}}$
+\end{itemize}
+
+\subsection{Tham số mô hình}
+
+\begin{table}[H]
+\centering
+\caption{Tham số LIF và dòng điện đầu vào}
+\begin{tabular}{lcc|lcc}
+\toprule
+\multicolumn{3}{c|}{\textbf{Tham số neuron}} & \multicolumn{3}{c}{\textbf{Tham số sóng vuông}} \\
+\midrule
+$C_m$ & 1.0 & $\mu$F/cm$^2$ & Biên độ & 2.0 & $\mu$A/cm$^2$ \\
+$g_L$ & 0.1 & mS/cm$^2$ & Chu kỳ & 50.0 & ms \\
+$E_L$ & -65.0 & mV & Duty cycle & 50\% & \\
+$V_{\text{threshold}}$ & -50.0 & mV & Bắt đầu & 10.0 & ms \\
+$V_{\text{reset}}$ & -70.0 & mV & & & \\
+$t_{\text{ref}}$ & 2.0 & ms & & & \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Kết quả mô phỏng}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{lif_static_plots.png}
+\caption{Mô phỏng LIF với sóng vuông: (a) Điện thế màng với 4 spikes được phát hiện, (b) Dòng điện đầu vào dạng sóng vuông với chu kỳ 50 ms.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{/mnt/project/lif_animation.gif}
+\caption{Animation quá trình tích hợp điện thế và phát xung của mô hình LIF.}
+\end{figure}
+
+\subsection{Phân tích kết quả}
+
+\textbf{Thống kê phát xung:}
+\begin{itemize}
+    \item Tổng số xung: 4 spikes
+    \item Xung đầu tiên: 23.80 ms
+    \item Xung cuối cùng: 173.40 ms
+    \item Tần số phát xung: 20.00 Hz (1 spike/chu kỳ)
+\end{itemize}
+
+\textbf{Quan sát:}
+\begin{itemize}
+    \item Khi $I_{\text{ext}} = 0$: $V$ ở trạng thái nghỉ $E_L = -65$ mV
+    \item Khi $I_{\text{ext}} = 2.0$ $\mu$A/cm$^2$: $V$ tích hợp theo hàm mũ
+    \item Khi $V$ đạt $V_{\text{threshold}} = -50$ mV: neuron phát xung
+    \item Sau xung: $V$ reset về $-70$ mV và giữ nguyên trong 2 ms
+    \item Neuron chỉ phát 1 xung trong mỗi chu kỳ ON của sóng vuông
+\end{itemize}
+
+% ============================================================
+\section{Task 3: Reservoir Neural Network}
+
+\subsection{Yêu cầu}
+
+Sử dụng Reservoir Neural Network (Echo State Network) để dự đoán chuỗi thời gian Mackey-Glass, minh họa khả năng dự đoán chính xác cả giá trị tương lai gần ($x(t+10)$) và xa ($x(t+100)$).
+
+\subsection{Chuỗi Mackey-Glass}
+
+Phương trình vi phân trễ:
+\begin{equation}
+\frac{dx}{dt} = \frac{ax(t-\tau)}{1 + x(t-\tau)^{10}} - bx(t)
+\end{equation}
+
+\textbf{Tham số:} $a = 0.2$, $b = 0.1$, $\tau = 17$, $x_0 = 1.2$, $\Delta t = 0.1$
+
+Với $\tau = 17$, hệ thống ở trạng thái hỗn loạn nhẹ (weakly chaotic).
+
+\subsection{Kiến trúc Echo State Network}
+
+\textbf{Phương trình ESN:}
+\begin{align}
+\mathbf{x}(t+1) &= \tanh(\mathbf{W}_{\text{in}}\mathbf{u}(t) + \mathbf{W}_{\text{res}}\mathbf{x}(t)) \\
+\mathbf{y}(t) &= \mathbf{W}_{\text{out}}\mathbf{x}(t)
+\end{align}
+
+\textbf{Tham số mạng:}
+\begin{itemize}
+    \item $N_{\text{reservoir}} = 500$ neurons
+    \item Spectral radius: $\rho(\mathbf{W}_{\text{res}}) = 0.9$
+    \item Sparsity: 10\% kết nối
+    \item Ridge regression: $\alpha = 10^{-6}$
+\end{itemize}
+
+\subsection{Kết quả dự đoán}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{reservoir_predictions.png}
+\caption{Kết quả dự đoán chuỗi Mackey-Glass: (a)(b) Near-future prediction ($t+10$), (c)(d) Far-future prediction ($t+100$). Đường xanh: giá trị thực, đường đỏ: giá trị dự đoán.}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{/mnt/project/reservoir_animation.gif}
+\caption{Animation quá trình dự đoán $t+10$ theo thời gian thực.}
+\end{figure}
+
+\subsection{Phân tích độ chính xác}
+
+\begin{table}[H]
+\centering
+\caption{Đánh giá độ chính xác dự đoán}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Khoảng dự đoán} & \textbf{MSE} & \textbf{MAE} & \textbf{RMSE} \\
+\midrule
+Near-future ($t+10$) & 0.0026 & 0.0383 & 0.0512 \\
+Far-future ($t+100$) & 0.1582 & 0.3419 & 0.3978 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\textbf{Nhận xét:}
+
+\begin{itemize}
+    \item \textbf{Dự đoán $t+10$:} Rất chính xác (MSE = 0.0026)
+    \begin{itemize}
+        \item Đường dự đoán (đỏ) gần như trùng với giá trị thực (xanh)
+        \item Reservoir học được động lực học ngắn hạn của hệ
+    \end{itemize}
+    
+    \item \textbf{Dự đoán $t+100$:} Độ chính xác giảm đáng kể (MSE = 0.1582)
+    \begin{itemize}
+        \item Vẫn bắt được xu hướng tổng thể
+        \item Hiệu ứng hỗn loạn làm giảm khả năng dự đoán xa
+        \item Sai số tích lũy theo thời gian
+    \end{itemize}
+\end{itemize}
+
+\subsection{Ưu điểm của Reservoir Computing}
+
+\begin{enumerate}
+    \item \textbf{Huấn luyện nhanh:} Chỉ huấn luyện lớp đầu ra bằng Ridge regression
+    \item \textbf{Tránh vanishing gradient:} Không cần backpropagation through time
+    \item \textbf{Bộ nhớ động:} Reservoir giữ thông tin quá khứ thông qua kết nối hồi quy
+    \item \textbf{Khả năng xấp xỉ tổng quát:} Với reservoir đủ lớn, có thể xấp xỉ bất kỳ hệ động nào
+\end{enumerate}
+
+% ============================================================
+\section{Kết luận}
+
+\subsection{Tóm tắt}
+
+Đề tài đã hoàn thành đầy đủ 3 nhiệm vụ mô phỏng:
+
+\begin{enumerate}
+    \item \textbf{Hodgkin-Huxley:} Mô phỏng chính xác action potential, phân tích rõ vai trò của $I_{\text{Na}}$ (depolarization) và $I_{\text{K}}$ (repolarization). Kết quả: $V_{\text{peak}} = 41.29$ mV, tần số phát xung ~10 Hz.
+    
+    \item \textbf{LIF:} Tái tạo thành công cơ chế phát xung khi nhận sóng vuông. Phát hiện 4 spikes với tần số 20 Hz, minh họa các đặc tính: threshold, reset, refractory period.
+    
+    \item \textbf{Reservoir Network:} Dự đoán chính xác chuỗi Mackey-Glass ở khoảng gần (MSE = 0.0026 cho $t+10$) và bắt được xu hướng ở khoảng xa (MSE = 0.1582 cho $t+100$).
+\end{enumerate}
+
+\subsection{Ý nghĩa}
+
+\begin{itemize}
+    \item Hiểu sâu về cơ chế hoạt động của neuron sinh học (HH model)
+    \item Nắm vững phương pháp đơn giản hóa cho ứng dụng thực tế (LIF model)
+    \item Tiếp cận công nghệ reservoir computing - một hướng đi mới trong deep learning
+    \item Thành thạo kỹ năng mô phỏng, phân tích, và trực quan hóa dữ liệu khoa học
+\end{itemize}
+
+% ============================================================
+\section*{Tài liệu tham khảo}
+\addcontentsline{toc}{section}{Tài liệu tham khảo}
+
+\begin{thebibliography}{9}
+
+\bibitem{trappenberg2023}
+Trappenberg, T. P. (2023). \textit{Fundamentals of computational neuroscience} (3rd ed.). Oxford University Press.
+
+\bibitem{dayan2001}
+Dayan, P., \& Abbott, L. F. (2001). \textit{Theoretical neuroscience: Computational and mathematical modeling of neural systems}. MIT Press.
+
+\bibitem{tavanaei2019}
+Tavanaei, A., et al. (2019). Deep learning in spiking neural networks. \textit{Neural Networks}, 111, 47--52.
+
+\bibitem{lukosevicius2009}
+Lukoševičius, M., \& Jaeger, H. (2009). Reservoir computing approaches to recurrent neural network training. \textit{Computer Science Review}, 3(3), 5--17.
+
+\bibitem{hodgkin1952}
+Hodgkin, A. L., \& Huxley, A. F. (1952). A quantitative description of membrane current and its application to conduction and excitation in nerve. \textit{The Journal of Physiology}, 117(4), 500--544.
+
+\end{thebibliography}
+
+\end{document}
